@@ -48,6 +48,7 @@ sal_lo,         sal_hi           =    31.5,       34.5
 bb_lo,          bb_hi            =     0.0007,     0.0020
 cdom_lo,        cdom_hi          =     0.6,        1.4
 ph_lo,          ph_hi            =     7.6,        8.2
+pco2_lo,        pco2_hi          =     0.0,     7000.0
 si412_lo,       si412_hi         =     0.0,       80.0
 si443_lo,       si443_hi         =     0.0,       80.0
 si490_lo,       si490_hi         =     0.0,       80.0
@@ -68,6 +69,7 @@ colorC = 'red'
 colorN = 'xkcd:gold'
 colorP = 'magenta'
 colorH = 'xkcd:purple blue'
+colorR = 'xkcd:raspberry'
 
 labelT = 'Temperature'
 labelO = 'Oxygen'
@@ -78,8 +80,9 @@ labelC = 'CDOM/FDOM'
 labelN = 'Nitrate'
 labelP = 'PAR'
 labelH = 'pH'
+labelR = 'pCO2'
 
-optionsList = [labelO, labelT, labelS, labelA, labelB, labelC, labelN, labelP]
+optionsList = [labelO, labelT, labelS, labelA, labelB, labelC, labelN, labelP, labelH, labelR]
 
 
 ########################
@@ -269,7 +272,7 @@ def GetDiscreteSummaryCastSubset(dsDf, cast, columns):
 
 
 
-def ChartAB(pDf, xrng, pIdcs, A, Az, Albl, Acolor, B, Bz, Blbl, Bcolor, wid, hgt):
+def ChartAB(pDf, xrng, pIdcs, A, Az, Albl, Acolor, B, Bz, Blbl, Bcolor, wid, hgt, z0=-200., z1=0.):
     """
     Make a series of charts comparing two types of sensor data, A and B.
     The data are passed in as DataArrays: A and Az are data and z coordinates respectively.
@@ -310,8 +313,8 @@ def ChartAB(pDf, xrng, pIdcs, A, Az, Albl, Acolor, B, Bz, Blbl, Bcolor, wid, hgt
                                     + Blbl + ' (' + Bcolor + ', upper x-axis)')
 
         # Set axis ranges from passed list of pairs xrng[][]
-        axs[i].set(     xlim = (xrng[0][0], xrng[0][1]), ylim = (-200., 0.))
-        axstwin0[i].set(xlim = (xrng[1][0], xrng[1][1]), ylim = (-200., 0.))
+        axs[i].set(     xlim = (xrng[0][0], xrng[0][1]), ylim = (z0, z1))
+        axstwin0[i].set(xlim = (xrng[1][0], xrng[1][1]), ylim = (z0, z1))
 
         # chart timestamp (embellish for noon / midnight)
         ascent_start_time = 'Start UTC: ' + str(ta0)
@@ -344,8 +347,8 @@ def ReadOSB_March2021_1min():
         xr.open_dataset(data_source + 'par/osb_par_march2021_1min.nc'),            \
         xr.open_dataset(data_source + 'current/osb_veast_march2021_1min.nc'),      \
         xr.open_dataset(data_source + 'current/osb_vnorth_march2021_1min.nc'),     \
-        xr.open_dataset(data_source + 'current/osb_vup_march2021_1min.nc')
-
+        xr.open_dataset(data_source + 'current/osb_vup_march2021_1min.nc'),        \
+        xr.open_dataset(data_source + 'pCO2/osb_pco2_march2021.nc')
 
 def ReadOSB_JuneJuly2018_1min():
     data_source = os.getcwd() + '/RepositoryData/rca/'
@@ -598,4 +601,4 @@ print(nDays, 'days or', nDays*9, 'possible profiles')
 print("There were, over this time, in fact...")
 print(nTotal, 'profiles;', nMidn, 'at local midnight and', nNoon, 'at local noon')
 
-dsA, dsB, dsC, dsT, dsS, dsO, dsH, dsI, dsN, dsP, dsU, dsV, dsW = ReadOSB_March2021_1min()
+dsA, dsB, dsC, dsT, dsS, dsO, dsH, dsI, dsN, dsP, dsU, dsV, dsW, dsR = ReadOSB_March2021_1min()
