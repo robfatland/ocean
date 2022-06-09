@@ -1,4 +1,4 @@
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/robfatland/ocean.git/HEAD?labpath=https%3A%2F%2Fgithub.com%2Frobfatland%2Focean%2Fblob%2Fmain%2FBioOptics.ipynb)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/robfatland/ocean.git/HEAD)
 
 
 # Introduction to the **ocean** GitHub repository
