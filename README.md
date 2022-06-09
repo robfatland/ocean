@@ -1,3 +1,6 @@
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/robfatland/ocean.git/HEAD?labpath=https%3A%2F%2Fgithub.com%2Frobfatland%2Focean%2Fblob%2Fmain%2FBioOptics.ipynb)
+
+
 # Introduction to the **ocean** GitHub repository
 
 This [repository](https://github.com/robfatland/ocean) is a collection of Python Jupyter notebooks and supporting data. 
@@ -10,9 +13,6 @@ Click the following link -- it may take a few minutes to initialize -- to create
 of this repository. Once the binder environment appears in your browser, double-click
 the **BioOptics** Jupyter notebook to view its contents. Additional work may be found in the **`Notebooks`** sub-folder.
 You may experiment as you like with the binder contents as the environment is temporary.
-
-
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/robfatland/ocean/HEAD)
 
 
 To work from a copy of this repository: Establish a stable Jupyter notebook server environment 
