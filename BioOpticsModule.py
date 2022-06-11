@@ -20,8 +20,6 @@ from traitlets import dlink
 from IPython.display import HTML, Video
 
 
-
-
 ##################
 #
 # parameter configuration
@@ -48,7 +46,7 @@ sal_lo,         sal_hi           =    31.5,       34.5
 bb_lo,          bb_hi            =     0.0007,     0.0020
 cdom_lo,        cdom_hi          =     0.6,        1.4
 ph_lo,          ph_hi            =     7.6,        8.2
-pco2_lo,        pco2_hi          =     0.0,     7000.0
+pco2_lo,        pco2_hi          =   200.0,     1200.0
 si412_lo,       si412_hi         =     0.0,       80.0
 si443_lo,       si443_hi         =     0.0,       80.0
 si490_lo,       si490_hi         =     0.0,       80.0
@@ -272,7 +270,8 @@ def GetDiscreteSummaryCastSubset(dsDf, cast, columns):
 
 
 
-def ChartAB(pDf, xrng, pIdcs, A, Az, Albl, Acolor, B, Bz, Blbl, Bcolor, wid, hgt, z0=-200., z1=0.):
+def ChartAB(pDf, xrng, pIdcs, A, Az, Albl, Acolor, B, Bz, Blbl, Bcolor, wid, hgt, \
+            z0=-200., z1=0., legA='ascent', legB='ascent'):
     """
     Make a series of charts comparing two types of sensor data, A and B.
     The data are passed in as DataArrays: A and Az are data and z coordinates respectively.
@@ -293,6 +292,9 @@ def ChartAB(pDf, xrng, pIdcs, A, Az, Albl, Acolor, B, Bz, Blbl, Bcolor, wid, hgt
     # create a list of twin axes, one for each chart
     axstwin0 = [axs[i].twiny() for i in range(ncharts)]
 
+    keyA0, keyA1 = legA + "_start", legA + "_end"
+    keyB0, keyB1 = legB + "_start", legB + "_end"
+            
     # this index i will range across the dataframe indices for ascent profiles
     for i in range(ncharts):
         
@@ -300,10 +302,11 @@ def ChartAB(pDf, xrng, pIdcs, A, Az, Albl, Acolor, B, Bz, Blbl, Bcolor, wid, hgt
         #   index 0, 1, 2, ... These are respectively pIdx and i
         pIdx = pIdcs[i]
 
-        ta0, ta1 = pDf["ascent_start"][pIdx], pDf["ascent_end"][pIdx]
-
-        Ax, Ay = A.sel(time=slice(ta0,  ta1)), Az.sel(time=slice(ta0, ta1))
-        Bx, By = B.sel(time=slice(ta0,  ta1)), Bz.sel(time=slice(ta0, ta1))
+        tA0, tA1 = pDf[keyA0][pIdx], pDf[keyA1][pIdx]
+        tB0, tB1 = pDf[keyB0][pIdx], pDf[keyB1][pIdx]
+        
+        Ax, Ay = A.sel(time=slice(tA0,  tA1)), Az.sel(time=slice(tA0, tA1))
+        Bx, By = B.sel(time=slice(tB0,  tB1)), Bz.sel(time=slice(tB0, tB1))
         
         axs[i].plot(Ax, Ay, ms = 4., color=Acolor, mfc=Acolor)
         axstwin0[i].plot(Bx, By, markersize = 4., color=Bcolor, mfc=Bcolor)
@@ -317,8 +320,9 @@ def ChartAB(pDf, xrng, pIdcs, A, Az, Albl, Acolor, B, Bz, Blbl, Bcolor, wid, hgt
         axstwin0[i].set(xlim = (xrng[1][0], xrng[1][1]), ylim = (z0, z1))
 
         # chart timestamp (embellish for noon / midnight)
-        ascent_start_time = 'Start UTC: ' + str(ta0)
-        delta_t = ta0-dt64(ta0.date())
+        #   bug: qualifier will fail if the 'A' data is not ascent-type (non-critical)
+        ascent_start_time = 'Start UTC: ' + str(tA0)
+        delta_t = tA0-dt64(tA0.date())
         if delta_t > midn0 and delta_t < midn1: ascent_start_time += " MIDNIGHT local"
         if delta_t > noon0 and delta_t < noon1: ascent_start_time += " NOON local"
 
@@ -328,6 +332,66 @@ def ChartAB(pDf, xrng, pIdcs, A, Az, Albl, Acolor, B, Bz, Blbl, Bcolor, wid, hgt
     return fig, axs
 
 
+
+def ChartAplotBscatter(pDf, xrng, pIdcs, A, Az, Albl, Acolor, B, Bz, Blbl, Bcolor, wid, hgt, \
+            z0=-200., z1=0., legA='ascent', legB='ascent'):
+    """
+    Rips off ChartAB() by hardcoding the B plot as a scatter chart to accommodate pH
+    """
+    global midn0, midn1, noon0, noon1
+        
+    # if too many charts are requested: Take the first 117 only
+    ncharts = len(pIdcs)
+    if ncharts > 117: ncharts = 117
+    print("Attempting", ncharts, "charts\n")
+
+    # set up the requested number of charts in a vertical column
+    fig, axs = plt.subplots(ncharts, 1, figsize=(wid, hgt*ncharts), tight_layout=True)
+
+    # create a list of twin axes, one for each chart
+    axstwin0 = [axs[i].twiny() for i in range(ncharts)]
+
+    keyA0, keyA1 = legA + "_start", legA + "_end"
+    keyB0, keyB1 = legB + "_start", legB + "_end"
+            
+    # this index i will range across the dataframe indices for ascent profiles
+    for i in range(ncharts):
+        
+        # Need both a profile index into the profile dataframe pDf and a chart
+        #   index 0, 1, 2, ... These are respectively pIdx and i
+        pIdx = pIdcs[i]
+
+        tA0, tA1 = pDf[keyA0][pIdx], pDf[keyA1][pIdx]
+        tB0, tB1 = pDf[keyB0][pIdx], pDf[keyB1][pIdx]
+        
+        Ax, Ay = A.sel(time=slice(tA0,  tA1)), Az.sel(time=slice(tA0, tA1))
+        Bx, By = B.sel(time=slice(tB0,  tB1)), Bz.sel(time=slice(tB0, tB1))
+        
+        Ax = Ax.dropna('time')
+        Bx = Bx.dropna('time')
+        
+        axs[i].plot(Ax, Ay, ms = 4., color=Acolor, mfc=Acolor)
+        axstwin0[i].scatter(Bx, By) #, markersize = 4., color=Bcolor, mfc=Bcolor)
+        
+        # axis ranges
+        if i == 0: axs[i].set(title = Albl + ' (' + Acolor + ', lower x-axis) and ' \
+                                    + Blbl + ' (' + Bcolor + ', upper x-axis)')
+
+        # Set axis ranges from passed list of pairs xrng[][]
+        axs[i].set(     xlim = (xrng[0][0], xrng[0][1]), ylim = (z0, z1))
+        axstwin0[i].set(xlim = (xrng[1][0], xrng[1][1]), ylim = (z0, z1))
+
+        # chart timestamp (embellish for noon / midnight)
+        #   bug: qualifier will fail if the 'A' data is not ascent-type (non-critical)
+        ascent_start_time = 'Start UTC: ' + str(tA0)
+        delta_t = tA0-dt64(tA0.date())
+        if delta_t > midn0 and delta_t < midn1: ascent_start_time += " MIDNIGHT local"
+        if delta_t > noon0 and delta_t < noon1: ascent_start_time += " NOON local"
+
+        xlabel = xrng[0][0] + (xrng[0][1] - xrng[0][0])/2.
+        axs[i].text(xlabel, -10., ascent_start_time)
+        
+    return fig, axs
 
 
 # Load XArray Datasets from the smaller (intra-repo!) source files
@@ -602,3 +666,26 @@ print("There were, over this time, in fact...")
 print(nTotal, 'profiles;', nMidn, 'at local midnight and', nNoon, 'at local noon')
 
 dsA, dsB, dsC, dsT, dsS, dsO, dsH, dsI, dsN, dsP, dsU, dsV, dsW, dsR = ReadOSB_March2021_1min()
+
+# Having loaded the data we drop extraneous data variables that were missed to this point
+
+dsO = dsO.drop('moles_of_oxygen_per_unit_mass_in_sea_water_profiler_depth_enabled_qc_agg')
+dsT = dsT.drop('sea_water_temperature_profiler_depth_enabled_qc_agg')
+dsS = dsS.drop('sea_water_practical_salinity_profiler_depth_enabled_qc_agg')
+
+# ...and then apply the .dropna() to eliminate NaNs
+
+dsA = dsA.dropna('time')
+dsB = dsB.dropna('time')
+dsC = dsC.dropna('time')
+dsT = dsT.dropna('time')
+dsS = dsS.dropna('time')
+dsO = dsO.dropna('time')
+dsH = dsH.dropna('time')
+dsI = dsI.dropna('time')
+dsN = dsN.dropna('time')
+dsP = dsP.dropna('time')
+dsU = dsU.dropna('time')
+dsV = dsV.dropna('time')
+dsW = dsW.dropna('time')
+dsR = dsR.dropna('time')
