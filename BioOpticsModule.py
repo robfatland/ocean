@@ -333,67 +333,6 @@ def ChartAB(pDf, xrng, pIdcs, A, Az, Albl, Acolor, B, Bz, Blbl, Bcolor, wid, hgt
 
 
 
-def ChartAplotBscatter(pDf, xrng, pIdcs, A, Az, Albl, Acolor, B, Bz, Blbl, Bcolor, wid, hgt, \
-            z0=-200., z1=0., legA='ascent', legB='ascent'):
-    """
-    Rips off ChartAB() by hardcoding the B plot as a scatter chart to accommodate pH
-    """
-    global midn0, midn1, noon0, noon1
-        
-    # if too many charts are requested: Take the first 117 only
-    ncharts = len(pIdcs)
-    if ncharts > 117: ncharts = 117
-    print("Attempting", ncharts, "charts\n")
-
-    # set up the requested number of charts in a vertical column
-    fig, axs = plt.subplots(ncharts, 1, figsize=(wid, hgt*ncharts), tight_layout=True)
-
-    # create a list of twin axes, one for each chart
-    axstwin0 = [axs[i].twiny() for i in range(ncharts)]
-
-    keyA0, keyA1 = legA + "_start", legA + "_end"
-    keyB0, keyB1 = legB + "_start", legB + "_end"
-            
-    # this index i will range across the dataframe indices for ascent profiles
-    for i in range(ncharts):
-        
-        # Need both a profile index into the profile dataframe pDf and a chart
-        #   index 0, 1, 2, ... These are respectively pIdx and i
-        pIdx = pIdcs[i]
-
-        tA0, tA1 = pDf[keyA0][pIdx], pDf[keyA1][pIdx]
-        tB0, tB1 = pDf[keyB0][pIdx], pDf[keyB1][pIdx]
-        
-        Ax, Ay = A.sel(time=slice(tA0,  tA1)), Az.sel(time=slice(tA0, tA1))
-        Bx, By = B.sel(time=slice(tB0,  tB1)), Bz.sel(time=slice(tB0, tB1))
-        
-        Ax = Ax.dropna('time')
-        Bx = Bx.dropna('time')
-        
-        axs[i].plot(Ax, Ay, ms = 4., color=Acolor, mfc=Acolor)
-        axstwin0[i].scatter(Bx, By) #, markersize = 4., color=Bcolor, mfc=Bcolor)
-        
-        # axis ranges
-        if i == 0: axs[i].set(title = Albl + ' (' + Acolor + ', lower x-axis) and ' \
-                                    + Blbl + ' (' + Bcolor + ', upper x-axis)')
-
-        # Set axis ranges from passed list of pairs xrng[][]
-        axs[i].set(     xlim = (xrng[0][0], xrng[0][1]), ylim = (z0, z1))
-        axstwin0[i].set(xlim = (xrng[1][0], xrng[1][1]), ylim = (z0, z1))
-
-        # chart timestamp (embellish for noon / midnight)
-        #   bug: qualifier will fail if the 'A' data is not ascent-type (non-critical)
-        ascent_start_time = 'Start UTC: ' + str(tA0)
-        delta_t = tA0-dt64(tA0.date())
-        if delta_t > midn0 and delta_t < midn1: ascent_start_time += " MIDNIGHT local"
-        if delta_t > noon0 and delta_t < noon1: ascent_start_time += " NOON local"
-
-        xlabel = xrng[0][0] + (xrng[0][1] - xrng[0][0])/2.
-        axs[i].text(xlabel, -10., ascent_start_time)
-        
-    return fig, axs
-
-
 # Load XArray Datasets from the smaller (intra-repo!) source files
 
 def ReadOSB_March2021_1min():
@@ -507,7 +446,7 @@ def SixSignalChartSequence(df, dsA, dsB, dsC, dsO, dsS, dsT, xrng, chart_indices
         if delta_t > midn0 and delta_t < midn1: ascent_start_time += "\n local MIDNIGHT"
         if delta_t > noon0 and delta_t < noon1: ascent_start_time += "\n local NOON"
 
-        axstwin0[i].text(xrng[1][0] + 0.7, -20., ascent_start_time)
+        axstwin0[i].text(xrng[1][0] + 0.8, -20., ascent_start_time)
         
         axs[i][0].text(xrng[0][1] - 0.6,   -75, 'Temp',   color=colorT)
         axstwin0[i].text(xrng[1][0] + 0.1, -75, 'Sal',    color=colorS)
@@ -555,68 +494,102 @@ def ShowStaticBundles():
 
 
 def BundleInteract(choice, time_index, bundle_size):
+    '''
+    Consider a time range that includes many (e.g. 279) consecutive profiles. This function plots sensor data
+    within the time range. Choose the sensor using a dropdown. Choose the first profile using the start slider.
+    Choose the number of consecutive profiles to chart using the bundle slider. 
+    '''
     global pDf21
     
-    if   choice == labelO: dsXv, dsXz, xlo, xhi, xtitle, xcolor = dsO.doxygen,     dsO.z, do_lo, do_hi,           labelO, colorO
-    elif choice == labelT: dsXv, dsXz, xlo, xhi, xtitle, xcolor = dsT.temp,        dsT.z, temp_lo, temp_hi,       labelT, colorT
-    elif choice == labelS: dsXv, dsXz, xlo, xhi, xtitle, xcolor = dsS.salinity,    dsS.z, sal_lo, sal_hi,         labelS, colorS
-    elif choice == labelA: dsXv, dsXz, xlo, xhi, xtitle, xcolor = dsA.chlora,      dsA.z, chlora_lo, chlora_hi,   labelA, colorA
-    elif choice == labelB: dsXv, dsXz, xlo, xhi, xtitle, xcolor = dsB.backscatter, dsB.z, bb_lo, bb_hi,           labelB, colorB
-    elif choice == labelC: dsXv, dsXz, xlo, xhi, xtitle, xcolor = dsC.cdom,        dsC.z, cdom_lo, cdom_hi,       labelC, colorC
+    # this code sets up chart configuration based on choice of sensor
+    if   choice == labelO: dsXv, dsXz, xlo, xhi, xtitle, xcolor = dsO.doxygen,     dsO.z, do_lo,      do_hi,      labelO, colorO
+    elif choice == labelT: dsXv, dsXz, xlo, xhi, xtitle, xcolor = dsT.temp,        dsT.z, temp_lo,    temp_hi,    labelT, colorT
+    elif choice == labelS: dsXv, dsXz, xlo, xhi, xtitle, xcolor = dsS.salinity,    dsS.z, sal_lo,     sal_hi,     labelS, colorS
+    elif choice == labelA: dsXv, dsXz, xlo, xhi, xtitle, xcolor = dsA.chlora,      dsA.z, chlora_lo,  chlora_hi,  labelA, colorA
+    elif choice == labelB: dsXv, dsXz, xlo, xhi, xtitle, xcolor = dsB.backscatter, dsB.z, bb_lo,      bb_hi,      labelB, colorB
+    elif choice == labelC: dsXv, dsXz, xlo, xhi, xtitle, xcolor = dsC.cdom,        dsC.z, cdom_lo,    cdom_hi,    labelC, colorC
     elif choice == labelN: dsXv, dsXz, xlo, xhi, xtitle, xcolor = dsN.nitrate,     dsN.z, nitrate_lo, nitrate_hi, labelN, colorN
-    elif choice == labelP: dsXv, dsXz, xlo, xhi, xtitle, xcolor = dsP.par,         dsP.z, par_lo, par_hi,         labelP, colorP
-    elif choice == labelH: dsXv, dsXz, xlo, xhi, xtitle, xcolor = dsH.ph,          dsH.z, ph_lo, ph_hi,           labelP, colorP
+    elif choice == labelP: dsXv, dsXz, xlo, xhi, xtitle, xcolor = dsP.par,         dsP.z, par_lo,     par_hi,     labelP, colorP
+    elif choice == labelH: dsXv, dsXz, xlo, xhi, xtitle, xcolor = dsH.ph,          dsH.z, ph_lo,      ph_hi,      labelH, colorH
+    elif choice == labelR: dsXv, dsXz, xlo, xhi, xtitle, xcolor = dsR.pco2,        dsR.z, pco2_lo,    pco2_hi,    labelR, colorR
     else: return 0
-    
+
+    # This configuration code block is hardcoded to work with March 2021
     date0, date1   = dt64_from_doy(2021, 60), dt64_from_doy(2021, 91)
     time0, time1   = td64(0, 'h'), td64(24, 'h')
-    wid, hgt       = 7, 5
+    wid, hgt       = 9, 5
     x0, x1, y0, y1 = xlo, xhi, -200, 0
     title          = xtitle
     color          = xcolor
     pIdcs          = GenerateTimeWindowIndices(pDf21, date0, date1, time0, time1)
     nProfiles      = len(pIdcs)
+
+    # ad hoc locations on respective charts for text giving time range of current bundle
+    pxpy           = { labelO: (60, -25), labelT: (6.8, -25), labelS: (33.5, -25),    \
+                       labelA: (0.7, -150), labelB: (.0017, -70), labelC: (.65, -175),    \
+                       labelN: (23, -25), labelP: (150, -75), labelH: (7.65, -25),    \
+                       labelR: (900, -25) }
+    px, py         = pxpy[choice]
     
     fig, ax = plt.subplots(figsize=(wid, hgt), tight_layout=True)
     iProf0 = time_index if time_index < nProfiles else nProfiles
     iProf1 = iProf0 + bundle_size if iProf0 + bundle_size < nProfiles else nProfiles
     for i in range(iProf0, iProf1):
         pIdx = pIdcs[i]
-        ta0, ta1 = pDf21["ascent_start"][pIdx], pDf21["ascent_end"][pIdx]
+        if choice == labelH or choice == labelR:
+            ta0, ta1 = pDf21["descent_start"][pIdx], pDf21["descent_end"][pIdx]
+        else:
+            ta0, ta1 = pDf21["ascent_start"][pIdx], pDf21["ascent_end"][pIdx]
         dsXsensor, dsXdepth = dsXv.sel(time=slice(ta0,  ta1)), dsXz.sel(time=slice(ta0, ta1))
         ax.plot(dsXsensor, dsXdepth, ms = 4., color=color, mfc=color)
     ax.set(title = title)
     ax.set(xlim = (x0, x1), ylim = (y0, y1))
-    # ax.text(9.7, -170, str(pDf21["ascent_start"][pIdcs[iProf0]]))
-    # if iProf1 - iProf0 > 1:
-    #     thru_string = str(iProf1 - iProf0) + ' profiles running through'
-    #     ax.text(9.8, -180, thru_string)
-    #     ax.text(9.7, -190, str(pDf21["ascent_start"][pIdcs[iProf1-1]]))
+
+    # Add text indicating the current time range of the profile bundle
+    tString = str(pDf21["ascent_start"][pIdcs[iProf0]])
+    if iProf1 - iProf0 > 1: tString += '\n ...through... \n' + str(pDf21["ascent_start"][pIdcs[iProf1-1]])
+    ax.text(px, py, tString)
+    
     plt.show()
     return
 
 
 
 def Interactor():
-    '''Set up three bundle-interactive charts, vertically'''
-    
+    '''Set up three bundle-interactive charts, vertically. Independent sliders for choice of 
+    sensor, starting profile by index, and number of profiles in bundle. (90 profiles is about
+    ten days.)
+    '''
+    style = {'description_width': 'initial'}
     interact(BundleInteract, choice = widgets.Dropdown(options=optionsList,  value=labelT, description='sensor'), \
-                             time_index = widgets.IntSlider(min=0, max=270, step=1, value=0,                    \
-                                                            continuous_update=False, description='start'),      \
-                             bundle_size = widgets.IntSlider(min=1, max=80, step=1, value=1,                    \
-                                                            continuous_update=False, description='bundle'))
+                             time_index = widgets.IntSlider(min=0, max=270, step=1, value=188,                    \
+                                                            layout=widgets.Layout(width='35%'),                   \
+                                                            continuous_update=True, description='bundle start',  \
+                                                            style=style),
+                             bundle_size = widgets.IntSlider(min=1, max=90, step=1, value=18,                     \
+                                                            layout=widgets.Layout(width='35%'),                   \
+                                                            continuous_update=True, description='bundle width',  \
+                                                            style=style))
 
-    interact(BundleInteract, choice = widgets.Dropdown(options=optionsList, value=labelO, description='sensor'), \
-                             time_index = widgets.IntSlider(min=0, max=270, step=1, value=0,                    \
-                                                            continuous_update=False, description='start'),      \
-                             bundle_size = widgets.IntSlider(min=1, max=80, step=1, value=1,                    \
-                                                            continuous_update=False, description='bundle'))
+    interact(BundleInteract, choice = widgets.Dropdown(options=optionsList, value=labelO, description='sensor'),  \
+                             time_index = widgets.IntSlider(min=0, max=270, step=1, value=188,                    \
+                                                            layout=widgets.Layout(width='35%'),                   \
+                                                            continuous_update=True, description='bundle start',  \
+                                                            style=style),
+                             bundle_size = widgets.IntSlider(min=1, max=90, step=1, value=18,                     \
+                                                            layout=widgets.Layout(width='35%'),                   \
+                                                            continuous_update=True, description='bundle width',  \
+                                                            style=style))
 
-    interact(BundleInteract, choice = widgets.Dropdown(options=optionsList, value=labelS, description='sensor'), \
-                             time_index = widgets.IntSlider(min=0, max=270, step=1, value=0,                    \
-                                                            continuous_update=False, description='start'),      \
-                             bundle_size = widgets.IntSlider(min=1, max=80, step=1, value=1,                    \
-                                                            continuous_update=False, description='bundle'))
+    interact(BundleInteract, choice = widgets.Dropdown(options=optionsList, value=labelS, description='sensor'),  \
+                             time_index = widgets.IntSlider(min=0, max=270, step=1, value=188,                    \
+                                                            layout=widgets.Layout(width='35%'),                   \
+                                                            continuous_update=True, description='bundle start',  \
+                                                            style=style),                                         \
+                             bundle_size = widgets.IntSlider(min=1, max=90, step=1, value=18,                     \
+                                                            layout=widgets.Layout(width='35%'),                   \
+                                                            continuous_update=True, description='bundle width',  \
+                                                            style=style))
     return
 
 
