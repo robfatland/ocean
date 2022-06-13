@@ -98,9 +98,7 @@ optionsList = [labelO, labelT, labelS, labelA, labelB, labelC, labelN, labelP, l
 
 def doy(theDatetime): return 1 + int((theDatetime - dt64(str(theDatetime)[0:4] + '-01-01')) / td64(1, 'D'))
 
-
 def dt64_from_doy(year, doy): return dt64(str(year) + '-01-01') + td64(doy-1, 'D')
-
 
 def day_of_month_to_string(d): return str(d) if d > 9 else '0' + str(d)
 

@@ -1,10 +1,3 @@
-# This is a first draft of a **derivative** subset of the main directory Module.py file
-#   ...Modification to path to accommodate being one level deeper
-#   ...Add functions but flag them as unique to here
-
-
-
-
 ##################
 #
 # imports
@@ -76,6 +69,16 @@ colorN = 'xkcd:gold'
 colorP = 'magenta'
 colorH = 'xkcd:purple blue'
 
+colorTd = 'grey'
+colorSd = 'xkcd:yellow orange'
+colorOd = 'xkcd:azure'
+colorAd = 'xkcd:pale green'
+colorBd = 'xkcd:light turquoise'
+colorCd = 'xkcd:pinkish'
+colorNd = 'xkcd:brownish yellow'
+colorPd = 'xkcd:barbie pink'
+colorHd = 'xkcd:pastel purple'
+
 labelT = 'Temperature'
 labelO = 'Oxygen'
 labelS = 'Salinity'
@@ -104,9 +107,7 @@ optionsList = [labelO, labelT, labelS, labelA, labelB, labelC, labelN, labelP]
 
 def doy(theDatetime): return 1 + int((theDatetime - dt64(str(theDatetime)[0:4] + '-01-01')) / td64(1, 'D'))
 
-
 def dt64_from_doy(year, doy): return dt64(str(year) + '-01-01') + td64(doy-1, 'D')
-
 
 def day_of_month_to_string(d): return str(d) if d > 9 else '0' + str(d)
 
@@ -147,9 +148,6 @@ def ReadProfileMetadata(fnm):
     pDf['rest_end']      = pd.to_datetime(pDf['rest_end'])
     return pDf
 
-
-
-
 #######################
 # Time series metadata (index range) function
 #######################
@@ -170,59 +168,6 @@ def GenerateTimeWindowIndices(pDf, date0, date1, time0, time1):
             if delta_t >= time0 and delta_t <= time1: pIndices.append(i)
     return pIndices
 
-
-def ProfileEvaluation(t0, t1, pDf):
-    '''
-    At this time the profile metadata in pDf is broken up by year of interest and site.
-    For example the code above concerns Oregon Slope Base (OSB) and the year 2021. 
-    Only profiles through June are available.
-    
-    This function evaluates profiles within a given time range: How many profiles are there?
-    How many 'local noon', how many 'local midnight'? This is a simple way to check profiler 
-    operating consistency. This depends in turn on the profiler metadata reliability.
-    '''
-    global midn0, midn1, noon0, noon1
-    
-    nTotal = 0
-    nMidn = 0
-    nNoon = 0
-    nNinePerDay = 0
-
-    for i in range(len(pDf)):
-            
-        if pDf["ascent_start"][i] >= t0 and pDf["ascent_start"][i] <= t1:
-            nTotal += 1
-            
-            if pDf["descent_end"][i] - pDf["descent_start"][i] >= td64(60, 'm'):
-                
-                tProf = pDf["ascent_start"][i]
-                day_time = tProf - dt64(tProf.date())
-
-                if   day_time > midn0 and day_time < midn1: nMidn += 1
-                elif day_time > noon0 and day_time < noon1: nNoon += 1
-                else: print("found a long descent that did not fit noon or midnight...")
-        
-    return nTotal, nMidn, nNoon
-
-
-
-
-def GetProfileDataFrameIndicesForSomeTime(site, year, target, window):
-    '''
-    This is a convenience function that bundles the profile metadata read with the scan for
-    profiles that match both a date window and a time-of-day window. The 'site' and 'year' 
-    arguments are strings. The target is a target datetime; so we want the shallow profiler
-    profile index that mostly closely matches it. 'window' is a +- window in minutes. This 
-    code has two major flaws at the moment.
-      - It will not work across day boundaries
-      - It returns a list of suitable indices; so these must be sorted out by inspection
-    '''
-    pDf             = ReadProfileMetadata(os.getcwd() + "/./Profiles/" + site + year + ".csv")        
-    t_date          = dt64(target.split('T')[0])                                        
-    t_time          = target.split('T')[1].split(':')                                
-    t_hrs, t_min    = int(t_time[0]), int(t_time[1])     
-    t_early, t_late = td64(t_hrs*60 + t_min - window, 'm'), td64(t_hrs*60 + t_min + window, 'm')    
-    return GenerateTimeWindowIndices(pDf, t_date, t_date, t_early, t_late), pDf
 
 
 
@@ -253,31 +198,80 @@ def ReadOSB_March2021_1min():
         xr.open_dataset(data_source + 'par/osb_par_march2021_1min.nc'),            \
         xr.open_dataset(data_source + 'current/osb_veast_march2021_1min.nc'),      \
         xr.open_dataset(data_source + 'current/osb_vnorth_march2021_1min.nc'),     \
-        xr.open_dataset(data_source + 'current/osb_vup_march2021_1min.nc')
+        xr.open_dataset(data_source + 'current/osb_vup_march2021_1min.nc'),         \
+        xr.open_dataset(data_source + 'pCO2/osb_pco2_march2021.nc')
 
 
-def ReadOSB_JuneJuly2018_1min():
-    data_source = os.getcwd() + '/../RepositoryData/rca/'
-    return                                                                         \
-        xr.open_dataset(data_source + 'fluor/osb_chlora_june_july2018_1min.nc'),       \
-        xr.open_dataset(data_source + 'fluor/osb_backscatter_june_july2018_1min.nc'),  \
-        xr.open_dataset(data_source + 'fluor/osb_cdom_june_july2018_1min.nc'),         \
-        xr.open_dataset(data_source + 'ctd/osb_temp_june_july2018_1min.nc'),           \
-        xr.open_dataset(data_source + 'ctd/osb_salinity_june_july2018_1min.nc'),       \
-        xr.open_dataset(data_source + 'ctd/osb_doxygen_june_july2018_1min.nc'),        \
-        xr.open_dataset(data_source + 'pH/osb_ph_june_july2018_1min.nc'),              \
-        xr.open_dataset(data_source + 'irrad/osb_spectir_june_july2018_1min.nc'),      \
-        xr.open_dataset(data_source + 'nitrate/osb_nitrate_june_july2018_1min.nc'),    \
-        xr.open_dataset(data_source + 'par/osb_par_june_july2018_1min.nc'),            \
-        xr.open_dataset(data_source + 'current/osb_veast_june_july2018_1min.nc'),      \
-        xr.open_dataset(data_source + 'current/osb_vnorth_june_july2018_1min.nc'),     \
-        xr.open_dataset(data_source + 'current/osb_vup_june_july2018_1min.nc')
+def CompareAscentDescent(p, T, S, O, A, B, C):
+    '''Get a sense of variability between ascent and subsequent descent'''
+    
+    pw = GenerateTimeWindowIndices(p, dt64_from_doy(2021, 65), dt64_from_doy(2021, 65), td64(0, 'h'), td64(24, 'h'))
+    ncharts = len(pw)
+
+    fig, axs = plt.subplots(ncharts, 3, figsize=(15, 4*ncharts), tight_layout=True)
+
+    axt0 = [axs[i][0].twiny() for i in range(ncharts)]
+    axt1 = [axs[i][1].twiny() for i in range(ncharts)]
+    axt2 = [axs[i][2].twiny() for i in range(ncharts)]
+
+    for i in range(pw[0], pw[-1]+1):
+
+        axi = i - pw[0]
+
+        t0, t1, t2 = p["ascent_start"][i], p["ascent_end"][i], p["descent_end"][i]
+
+        Ta = T.sel(time=slice(t0, t1))
+        Td = T.sel(time=slice(t1, t2))
+        Sa = S.sel(time=slice(t0, t1))
+        Sd = S.sel(time=slice(t1, t2))
+        Oa = O.sel(time=slice(t0, t1))
+        Od = O.sel(time=slice(t1, t2))
+        Aa = A.sel(time=slice(t0, t1))
+        Ad = A.sel(time=slice(t1, t2))
+        Ba = B.sel(time=slice(t0, t1))
+        Bd = B.sel(time=slice(t1, t2))
+        Ca = C.sel(time=slice(t0, t1))
+        Cd = C.sel(time=slice(t1, t2))
+
+        axs[axi][0].plot(Ta.temp, Ta.z, color=colorT, marker='s', ms=4., mfc=colorT)
+        axs[axi][0].plot(Td.temp, Td.z, color=colorTd, marker='v', ms=4., mfc=colorTd)
+        axt0[axi].plot(Sa.salinity, Sa.z, color=colorS, marker='o', ms=4., mfc=colorS)
+        axt0[axi].plot(Sd.salinity, Sd.z, color=colorSd, marker='^', ms=4., mfc=colorSd)
+
+        axs[axi][1].plot(Oa.doxygen, Oa.z, color=colorO, marker='s', ms=4., mfc=colorO)
+        axs[axi][1].plot(Od.doxygen, Od.z, color=colorOd, marker='v', ms=4., mfc=colorOd)
+        axt1[axi].plot(Aa.chlora, Aa.z, color=colorA, marker='o', ms=4., mfc=colorA)
+        axt1[axi].plot(Ad.chlora, Ad.z, color=colorAd, marker='^', ms=4., mfc=colorAd)
+
+        axs[axi][2].plot(Ba.backscatter, Ba.z, color=colorB, marker='s', ms=4., mfc=colorB)
+        axs[axi][2].plot(Bd.backscatter, Bd.z, color=colorBd, marker='v', ms=4., mfc=colorBd)
+        axt2[axi].plot(Ca.cdom, Ca.z, color=colorC, marker='o', ms=4., mfc=colorC)
+        axt2[axi].plot(Cd.cdom, Cd.z, color=colorCd, marker='^', ms=4., mfc=colorCd)
+
+        axs[axi][0].set(ylim=(-200., 0.))
+        axs[axi][1].set(ylim=(-200., 0.))
+        axs[axi][2].set(ylim=(-200., 0.))
+
+        axs[axi][0].set(xlim=(temp_lo, temp_hi))
+        axs[axi][1].set(xlim=(do_lo, do_hi))
+        axs[axi][2].set(xlim=(bb_lo, bb_hi))
 
 
+    axs[0][0].set(title='Temp (black) and Salinity (orange)')
+    axs[0][1].set(title='Oxygen (blue) and Chlorophyll (green)')
+    axs[0][2].set(title='CDOM (red) and Backscatter (cyan)')
 
+    fig.show()
 
-
-
+    # For additional labeling:
+    # axs[iC][0].text(7.4, -14, 'S')
+    # axs[iC][0].text(10.2, -14, 'T')
+    # axs[iC][1].text(170, -30, 'Chl-A')
+    # axs[iC][1].text(300, -150, 'DO')
+    # axs[iC][2].text(.0007, -20, 'CDOM')
+    # axs[iC][2].text(.0013, -75, 'SCATT')  
+    
+    return
 
 
 ##################
@@ -286,17 +280,30 @@ def ReadOSB_JuneJuly2018_1min():
 # Load the 2021 Oregon Slope Base profile metadata; and some March 2021 sensor datasets
 ##################
 
-# Note these are profile times for Axial Base
-pDf21 = ReadProfileMetadata(os.getcwd()+"/../Profiles/osb2021.csv")
+# profile metadata
+p = ReadProfileMetadata(os.getcwd()+"/../Profiles/osb2021.csv")
 
-# Some code to test out the above ProfileEvaluation() function
-t0, t1 = dt64('2021-01-01'), dt64('2021-02-01')
-nDays = (t1 - t0).astype(int)
-nTotal, nMidn, nNoon = ProfileEvaluation(t0, t1, pDf21)
+# sensor data
+A, B, C, T, S, O, H, I, N, P, U, V, W, R = ReadOSB_March2021_1min()
 
-print("For 2021, month of January, we have...")
-print(nDays, 'days or', nDays*9, 'possible profiles')
-print("There were, over this time, in fact...")
-print(nTotal, 'profiles;', nMidn, 'at local midnight and', nNoon, 'at local noon')
+# Having loaded the data there are some artifacts to discard in O, T and :
+O = O.drop('moles_of_oxygen_per_unit_mass_in_sea_water_profiler_depth_enabled_qc_agg')
+T = T.drop('sea_water_temperature_profiler_depth_enabled_qc_agg')
+S = S.drop('sea_water_practical_salinity_profiler_depth_enabled_qc_agg')
 
-dsA, dsB, dsC, dsT, dsS, dsO, dsH, dsI, dsN, dsP, dsU, dsV, dsW = ReadOSB_March2021_1min()
+# ...and then apply the .dropna() to eliminate NaNs
+
+A = A.dropna('time')
+B = B.dropna('time')
+C = C.dropna('time')
+T = T.dropna('time')
+S = S.dropna('time')
+O = O.dropna('time')
+H = H.dropna('time')
+I = I.dropna('time')
+N = N.dropna('time')
+P = P.dropna('time')
+U = U.dropna('time')
+V = V.dropna('time')
+W = W.dropna('time')
+R = R.dropna('time')

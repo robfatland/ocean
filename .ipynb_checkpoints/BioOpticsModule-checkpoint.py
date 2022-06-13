@@ -98,9 +98,7 @@ optionsList = [labelO, labelT, labelS, labelA, labelB, labelC, labelN, labelP, l
 
 def doy(theDatetime): return 1 + int((theDatetime - dt64(str(theDatetime)[0:4] + '-01-01')) / td64(1, 'D'))
 
-
 def dt64_from_doy(year, doy): return dt64(str(year) + '-01-01') + td64(doy-1, 'D')
-
 
 def day_of_month_to_string(d): return str(d) if d > 9 else '0' + str(d)
 
@@ -640,8 +638,7 @@ print(nTotal, 'profiles;', nMidn, 'at local midnight and', nNoon, 'at local noon
 
 dsA, dsB, dsC, dsT, dsS, dsO, dsH, dsI, dsN, dsP, dsU, dsV, dsW, dsR = ReadOSB_March2021_1min()
 
-# Having loaded the data we drop extraneous data variables that were missed to this point
-
+# Having loaded the data there are some artifacts to discard in O, T and :
 dsO = dsO.drop('moles_of_oxygen_per_unit_mass_in_sea_water_profiler_depth_enabled_qc_agg')
 dsT = dsT.drop('sea_water_temperature_profiler_depth_enabled_qc_agg')
 dsS = dsS.drop('sea_water_practical_salinity_profiler_depth_enabled_qc_agg')

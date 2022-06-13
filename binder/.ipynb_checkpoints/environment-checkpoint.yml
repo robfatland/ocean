@@ -1,0 +1,11 @@
+channels:
+  - conda-forge
+dependencies:
+  - python=3
+  - numpy
+  - pandas
+  - matplotlib
+  - netcdf4
+  - xarray
+  - ffmpeg
+  - cmocean
