@@ -553,40 +553,41 @@ def BundleInteract(choice, time_index, bundle_size):
 
 
 
-def Interactor():
+def Interactor(cu):
     '''Set up three bundle-interactive charts, vertically. Independent sliders for choice of 
     sensor, starting profile by index, and number of profiles in bundle. (90 profiles is about
-    ten days.)
+    ten days.) A fast machine can have cu = True to give a slider-responsive animation. Make
+    it False to avoid jerky 'takes forever' animation on less powerful machines.
     '''
     style = {'description_width': 'initial'}
     interact(BundleInteract, choice = widgets.Dropdown(options=optionsList,  value=labelT, description='sensor'), \
                              time_index = widgets.IntSlider(min=0, max=270, step=1, value=188,                    \
                                                             layout=widgets.Layout(width='35%'),                   \
-                                                            continuous_update=True, description='bundle start',  \
+                                                            continuous_update=cu, description='bundle start',  \
                                                             style=style),
                              bundle_size = widgets.IntSlider(min=1, max=90, step=1, value=18,                     \
                                                             layout=widgets.Layout(width='35%'),                   \
-                                                            continuous_update=True, description='bundle width',  \
+                                                            continuous_update=cu, description='bundle width',  \
                                                             style=style))
 
     interact(BundleInteract, choice = widgets.Dropdown(options=optionsList, value=labelO, description='sensor'),  \
                              time_index = widgets.IntSlider(min=0, max=270, step=1, value=188,                    \
                                                             layout=widgets.Layout(width='35%'),                   \
-                                                            continuous_update=True, description='bundle start',  \
+                                                            continuous_update=cu, description='bundle start',  \
                                                             style=style),
                              bundle_size = widgets.IntSlider(min=1, max=90, step=1, value=18,                     \
                                                             layout=widgets.Layout(width='35%'),                   \
-                                                            continuous_update=True, description='bundle width',  \
+                                                            continuous_update=cu, description='bundle width',  \
                                                             style=style))
 
     interact(BundleInteract, choice = widgets.Dropdown(options=optionsList, value=labelS, description='sensor'),  \
                              time_index = widgets.IntSlider(min=0, max=270, step=1, value=188,                    \
                                                             layout=widgets.Layout(width='35%'),                   \
-                                                            continuous_update=True, description='bundle start',  \
+                                                            continuous_update=cu, description='bundle start',  \
                                                             style=style),                                         \
                              bundle_size = widgets.IntSlider(min=1, max=90, step=1, value=18,                     \
                                                             layout=widgets.Layout(width='35%'),                   \
-                                                            continuous_update=True, description='bundle width',  \
+                                                            continuous_update=cu, description='bundle width',  \
                                                             style=style))
     return
 
