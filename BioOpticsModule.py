@@ -168,15 +168,15 @@ def ReadProfileMetadata(fnm):
     use than datetime64 values, being essentially wrappers around the latter with
     additional utility.
     """
-    pDf = pd.read_csv(fnm, usecols=["1", "3", "5", "7", "9", "11"])
-    pDf.columns=['ascent_start', 'ascent_end', 'descent_start', 'descent_end', 'rest_start', 'rest_end']
-    pDf['ascent_start']  = pd.to_datetime(pDf['ascent_start'])
-    pDf['ascent_end']    = pd.to_datetime(pDf['ascent_end'])
-    pDf['descent_start'] = pd.to_datetime(pDf['descent_start'])
-    pDf['descent_end']   = pd.to_datetime(pDf['descent_end'])
-    pDf['rest_start']    = pd.to_datetime(pDf['rest_start'])
-    pDf['rest_end']      = pd.to_datetime(pDf['rest_end'])
-    return pDf
+    p = pd.read_csv(fnm, usecols=["1", "3", "5", "7", "9", "11"])
+    p.columns=['ascent_start', 'ascent_end', 'descent_start', 'descent_end', 'rest_start', 'rest_end']
+    p['ascent_start']  = pd.to_datetime(p['ascent_start'])
+    p['ascent_end']    = pd.to_datetime(p['ascent_end'])
+    p['descent_start'] = pd.to_datetime(p['descent_start'])
+    p['descent_end']   = pd.to_datetime(p['descent_end'])
+    p['rest_start']    = pd.to_datetime(p['rest_start'])
+    p['rest_end']      = pd.to_datetime(p['rest_end'])
+    return p
 
 
 
@@ -186,25 +186,25 @@ def ReadProfileMetadata(fnm):
 #######################
 # Given a time range we want the indices of the profiles within.
 #######################
-def GenerateTimeWindowIndices(pDf, date0, date1, time0, time1):
+def GenerateTimeWindowIndices(p, date0, date1, time0, time1):
     '''
     Given two day boundaries and a time window (UTC) within a day: Return a list
     of indices of profiles that start within both the day and time bounds. This 
     works from the passed dataframe of profile times.
     '''
-    nprofiles = len(pDf)
+    nprofiles = len(p)
     pIndices = []
     for i in range(nprofiles):
-        a0 = pDf["ascent_start"][i]
+        a0 = p["ascent_start"][i]
         if a0 >= date0 and a0 <= date1 + td64(1, 'D'):
             delta_t = a0 - dt64(a0.date())
             if delta_t >= time0 and delta_t <= time1: pIndices.append(i)
     return pIndices
 
 
-def ProfileEvaluation(t0, t1, pDf):
+def ProfileEvaluation(t0, t1, p):
     '''
-    At this time the profile metadata in pDf is broken up by year of interest and site.
+    At this time the profile metadata in p is broken up by year of interest and site.
     For example the code above concerns Oregon Slope Base (OSB) and the year 2021. 
     Only profiles through June are available.
     
@@ -219,14 +219,14 @@ def ProfileEvaluation(t0, t1, pDf):
     nNoon = 0
     nNinePerDay = 0
 
-    for i in range(len(pDf)):
+    for i in range(len(p)):
             
-        if pDf["ascent_start"][i] >= t0 and pDf["ascent_start"][i] <= t1:
+        if p["ascent_start"][i] >= t0 and p["ascent_start"][i] <= t1:
             nTotal += 1
             
-            if pDf["descent_end"][i] - pDf["descent_start"][i] >= td64(60, 'm'):
+            if p["descent_end"][i] - p["descent_start"][i] >= td64(60, 'm'):
                 
-                tProf = pDf["ascent_start"][i]
+                tProf = p["ascent_start"][i]
                 day_time = tProf - dt64(tProf.date())
 
                 if   day_time > midn0 and day_time < midn1: nMidn += 1
@@ -248,12 +248,12 @@ def GetProfileDataFrameIndicesForSomeTime(site, year, target, window):
       - It will not work across day boundaries
       - It returns a list of suitable indices; so these must be sorted out by inspection
     '''
-    pDf             = ReadProfileMetadata(os.getcwd() + "/./Profiles/" + site + year + ".csv")        
+    p             = ReadProfileMetadata(os.getcwd() + "/./Profiles/" + site + year + ".csv")        
     t_date          = dt64(target.split('T')[0])                                        
     t_time          = target.split('T')[1].split(':')                                
     t_hrs, t_min    = int(t_time[0]), int(t_time[1])     
     t_early, t_late = td64(t_hrs*60 + t_min - window, 'm'), td64(t_hrs*60 + t_min + window, 'm')    
-    return GenerateTimeWindowIndices(pDf, t_date, t_date, t_early, t_late), pDf
+    return GenerateTimeWindowIndices(p, t_date, t_date, t_early, t_late), p
 
 
 
@@ -268,12 +268,12 @@ def GetDiscreteSummaryCastSubset(dsDf, cast, columns):
 
 
 
-def ChartAB(pDf, xrng, pIdcs, A, Az, Albl, Acolor, B, Bz, Blbl, Bcolor, wid, hgt, \
+def ChartAB(p, xrng, pIdcs, A, Az, Albl, Acolor, B, Bz, Blbl, Bcolor, wid, hgt, \
             z0=-200., z1=0., legA='ascent', legB='ascent'):
     """
     Make a series of charts comparing two types of sensor data, A and B.
     The data are passed in as DataArrays: A and Az are data and z coordinates respectively.
-    So A might be dsP.par (PAR DataArray) and depth Az would be dsP.z. Both use time as 
+    So A might be P.par (PAR DataArray) and depth Az would be P.z. Both use time as 
     their dimension. Charting is done over a set of passed profile indices pIdcs[].
     The number of profiles charted is constrained: Too many may bog down the kernel.
     """
@@ -296,12 +296,12 @@ def ChartAB(pDf, xrng, pIdcs, A, Az, Albl, Acolor, B, Bz, Blbl, Bcolor, wid, hgt
     # this index i will range across the dataframe indices for ascent profiles
     for i in range(ncharts):
         
-        # Need both a profile index into the profile dataframe pDf and a chart
+        # Need both a profile index into the profile dataframe p and a chart
         #   index 0, 1, 2, ... These are respectively pIdx and i
         pIdx = pIdcs[i]
 
-        tA0, tA1 = pDf[keyA0][pIdx], pDf[keyA1][pIdx]
-        tB0, tB1 = pDf[keyB0][pIdx], pDf[keyB1][pIdx]
+        tA0, tA1 = p[keyA0][pIdx], p[keyA1][pIdx]
+        tB0, tB1 = p[keyB0][pIdx], p[keyB1][pIdx]
         
         Ax, Ay = A.sel(time=slice(tA0,  tA1)), Az.sel(time=slice(tA0, tA1))
         Bx, By = B.sel(time=slice(tB0,  tB1)), Bz.sel(time=slice(tB0, tB1))
@@ -372,7 +372,7 @@ def ReadOSB_JuneJuly2018_1min():
 
 
 
-def SixSignalChartSequence(df, dsA, dsB, dsC, dsO, dsS, dsT, xrng, chart_indices = [506]):
+def SixSignalChartSequence(df, A, B, C, O, S, T, xrng, chart_indices = [506]):
     """
     This chart sequence shows chlorophyll-a, FDOM, backscatter, temperature, dissolved oxygen 
     and salinity with depth. (Note: FDOM is the fluorometer proxy for CDOM; so the data product
@@ -399,7 +399,6 @@ def SixSignalChartSequence(df, dsA, dsB, dsC, dsO, dsS, dsT, xrng, chart_indices
     axstwin1 = [axs[i][1].twiny() for i in range(ncharts)]
     axstwin2 = [axs[i][2].twiny() for i in range(ncharts)]
 
-
     for i in range(ncharts):
 
         # chart row index is i; profile index (dataframe df is OSB, 2021) is pIdx
@@ -407,21 +406,21 @@ def SixSignalChartSequence(df, dsA, dsB, dsC, dsO, dsS, dsT, xrng, chart_indices
 
         ta0, ta1 = df["ascent_start"][pIdx], df["ascent_end"][pIdx]
 
-        A = dsA.sel(time=slice(ta0,  ta1))
-        B = dsB.sel(time=slice(ta0,  ta1))
-        C = dsC.sel(time=slice(ta0,  ta1))
-        O = dsO.sel(time=slice(ta0,  ta1))
-        S = dsS.sel(time=slice(ta0,  ta1))
-        T = dsT.sel(time=slice(ta0,  ta1))
+        Asel = A.sel(time=slice(ta0,  ta1))
+        Bsel = B.sel(time=slice(ta0,  ta1))
+        Csel = C.sel(time=slice(ta0,  ta1))
+        Osel = O.sel(time=slice(ta0,  ta1))
+        Ssel = S.sel(time=slice(ta0,  ta1))
+        Tsel = T.sel(time=slice(ta0,  ta1))
 
-        axs[i][0].plot(T.temp,        T.z, ms = 4., color=colorT, mfc=colorT)
-        axstwin0[i].plot(S.salinity,  S.z, ms = 4., color=colorS, mfc=colorS)
+        axs[i][0].plot(Tsel.temp,        Tsel.z, ms = 4., color=colorT, mfc=colorT)
+        axstwin0[i].plot(Ssel.salinity,  Ssel.z, ms = 4., color=colorS, mfc=colorS)
 
-        axs[i][1].plot(O.doxygen,     O.z, ms = 4., color=colorO, mfc=colorO)
-        axstwin1[i].plot(A.chlora,    A.z, ms = 4., color=colorA, mfc=colorA)
+        axs[i][1].plot(Osel.doxygen,     Osel.z, ms = 4., color=colorO, mfc=colorO)
+        axstwin1[i].plot(Asel.chlora,    Asel.z, ms = 4., color=colorA, mfc=colorA)
 
-        axs[i][2].plot(B.backscatter, C.z, ms = 4., color=colorB, mfc=colorB)
-        axstwin2[i].plot(C.cdom,      C.z, ms = 4., color=colorC, mfc=colorC)
+        axs[i][2].plot(Bsel.backscatter, Csel.z, ms = 4., color=colorB, mfc=colorB)
+        axstwin2[i].plot(Csel.cdom,      Csel.z, ms = 4., color=colorC, mfc=colorC)
         
         # axis ranges
         if i == 0: 
@@ -459,12 +458,12 @@ def SixSignalChartSequence(df, dsA, dsB, dsC, dsO, dsS, dsT, xrng, chart_indices
     return fig, axs  
 
 
-def BundleStatic(pDf, date0, date1, time0, time1, wid, hgt, color, x0, x1, y0, y1, dsXd, dsXz, title):
-    pIdcs = GenerateTimeWindowIndices(pDf, date0, date1, time0, time1)
+def BundleStatic(p, date0, date1, time0, time1, wid, hgt, color, x0, x1, y0, y1, dsXd, dsXz, title):
+    pIdcs = GenerateTimeWindowIndices(p, date0, date1, time0, time1)
     nProfiles = len(pIdcs)
     fig, ax = plt.subplots(figsize=(wid, hgt), tight_layout=True)
     for i in range(nProfiles):
-        ta0, ta1 = pDf["ascent_start"][pIdcs[i]], pDf["ascent_end"][pIdcs[i]]
+        ta0, ta1 = p["ascent_start"][pIdcs[i]], p["ascent_end"][pIdcs[i]]
         dsXx, dsXy = dsXd.sel(time=slice(ta0,  ta1)), dsXz.sel(time=slice(ta0, ta1))
         ax.plot(dsXx, dsXy, ms = 4., color=color, mfc=color)
         ax.set(title = title)
@@ -475,18 +474,18 @@ def BundleStatic(pDf, date0, date1, time0, time1, wid, hgt, color, x0, x1, y0, y
 
 def ShowStaticBundles():
     '''creates six bundle charts for March 2021, Oregon Slope Base'''
-    BundleStatic(pDf21, dt64_from_doy(2021, 60), dt64_from_doy(2021, 91), td64(0, 'h'), td64(24, 'h'), 5, 4, \
-                   colorO, do_lo, do_hi, -200, 0, dsO.doxygen, dsO.z, 'Oxygen')
-    BundleStatic(pDf21, dt64_from_doy(2021, 60), dt64_from_doy(2021, 91), td64(0, 'h'), td64(24, 'h'), 5, 4, \
-                   colorT, temp_lo, temp_hi, -200, 0, dsT.temp, dsT.z, 'Temperature')
-    BundleStatic(pDf21, dt64_from_doy(2021, 60), dt64_from_doy(2021, 91), td64(0, 'h'), td64(24, 'h'), 5, 4, \
-                   colorS, sal_lo, sal_hi, -200, 0, dsS.salinity, dsS.z, 'Salinity')
-    BundleStatic(pDf21, dt64_from_doy(2021, 60), dt64_from_doy(2021, 91), td64(0, 'h'), td64(24, 'h'), 5, 4, \
-                   colorA, chlora_lo, chlora_hi, -200, 0, dsA.chlora, dsA.z, 'Chlorophyll')
-    BundleStatic(pDf21, dt64_from_doy(2021, 60), dt64_from_doy(2021, 91), td64(0, 'h'), td64(24, 'h'), 5, 4, \
-                   colorC, cdom_lo, cdom_hi, -200, 0, dsC.cdom, dsC.z, 'Fluorescence')
-    BundleStatic(pDf21, dt64_from_doy(2021, 60), dt64_from_doy(2021, 91), td64(0, 'h'), td64(24, 'h'), 5, 4, \
-                   colorB, bb_lo, bb_hi, -200, 0, dsB.backscatter, dsB.z, 'Particulate Backscatter')
+    BundleStatic(p, dt64_from_doy(2021, 60), dt64_from_doy(2021, 91), td64(0, 'h'), td64(24, 'h'), 5, 4, \
+                   colorO, do_lo, do_hi, -200, 0, O.doxygen, O.z, 'Oxygen')
+    BundleStatic(p, dt64_from_doy(2021, 60), dt64_from_doy(2021, 91), td64(0, 'h'), td64(24, 'h'), 5, 4, \
+                   colorT, temp_lo, temp_hi, -200, 0, T.temp, T.z, 'Temperature')
+    BundleStatic(p, dt64_from_doy(2021, 60), dt64_from_doy(2021, 91), td64(0, 'h'), td64(24, 'h'), 5, 4, \
+                   colorS, sal_lo, sal_hi, -200, 0, S.salinity, S.z, 'Salinity')
+    BundleStatic(p, dt64_from_doy(2021, 60), dt64_from_doy(2021, 91), td64(0, 'h'), td64(24, 'h'), 5, 4, \
+                   colorA, chlora_lo, chlora_hi, -200, 0, A.chlora, A.z, 'Chlorophyll')
+    BundleStatic(p, dt64_from_doy(2021, 60), dt64_from_doy(2021, 91), td64(0, 'h'), td64(24, 'h'), 5, 4, \
+                   colorC, cdom_lo, cdom_hi, -200, 0, C.cdom, C.z, 'Fluorescence')
+    BundleStatic(p, dt64_from_doy(2021, 60), dt64_from_doy(2021, 91), td64(0, 'h'), td64(24, 'h'), 5, 4, \
+                   colorB, bb_lo, bb_hi, -200, 0, B.backscatter, B.z, 'Particulate Backscatter')
     return
     
 
@@ -497,19 +496,19 @@ def BundleInteract(choice, time_index, bundle_size):
     within the time range. Choose the sensor using a dropdown. Choose the first profile using the start slider.
     Choose the number of consecutive profiles to chart using the bundle slider. 
     '''
-    global pDf21
+    global p
     
     # this code sets up chart configuration based on choice of sensor
-    if   choice == labelO: dsXv, dsXz, xlo, xhi, xtitle, xcolor = dsO.doxygen,     dsO.z, do_lo,      do_hi,      labelO, colorO
-    elif choice == labelT: dsXv, dsXz, xlo, xhi, xtitle, xcolor = dsT.temp,        dsT.z, temp_lo,    temp_hi,    labelT, colorT
-    elif choice == labelS: dsXv, dsXz, xlo, xhi, xtitle, xcolor = dsS.salinity,    dsS.z, sal_lo,     sal_hi,     labelS, colorS
-    elif choice == labelA: dsXv, dsXz, xlo, xhi, xtitle, xcolor = dsA.chlora,      dsA.z, chlora_lo,  chlora_hi,  labelA, colorA
-    elif choice == labelB: dsXv, dsXz, xlo, xhi, xtitle, xcolor = dsB.backscatter, dsB.z, bb_lo,      bb_hi,      labelB, colorB
-    elif choice == labelC: dsXv, dsXz, xlo, xhi, xtitle, xcolor = dsC.cdom,        dsC.z, cdom_lo,    cdom_hi,    labelC, colorC
-    elif choice == labelN: dsXv, dsXz, xlo, xhi, xtitle, xcolor = dsN.nitrate,     dsN.z, nitrate_lo, nitrate_hi, labelN, colorN
-    elif choice == labelP: dsXv, dsXz, xlo, xhi, xtitle, xcolor = dsP.par,         dsP.z, par_lo,     par_hi,     labelP, colorP
-    elif choice == labelH: dsXv, dsXz, xlo, xhi, xtitle, xcolor = dsH.ph,          dsH.z, ph_lo,      ph_hi,      labelH, colorH
-    elif choice == labelR: dsXv, dsXz, xlo, xhi, xtitle, xcolor = dsR.pco2,        dsR.z, pco2_lo,    pco2_hi,    labelR, colorR
+    if   choice == labelO: dsXv, dsXz, xlo, xhi, xtitle, xcolor = O.doxygen,     O.z, do_lo,      do_hi,      labelO, colorO
+    elif choice == labelT: dsXv, dsXz, xlo, xhi, xtitle, xcolor = T.temp,        T.z, temp_lo,    temp_hi,    labelT, colorT
+    elif choice == labelS: dsXv, dsXz, xlo, xhi, xtitle, xcolor = S.salinity,    S.z, sal_lo,     sal_hi,     labelS, colorS
+    elif choice == labelA: dsXv, dsXz, xlo, xhi, xtitle, xcolor = A.chlora,      A.z, chlora_lo,  chlora_hi,  labelA, colorA
+    elif choice == labelB: dsXv, dsXz, xlo, xhi, xtitle, xcolor = B.backscatter, B.z, bb_lo,      bb_hi,      labelB, colorB
+    elif choice == labelC: dsXv, dsXz, xlo, xhi, xtitle, xcolor = C.cdom,        C.z, cdom_lo,    cdom_hi,    labelC, colorC
+    elif choice == labelN: dsXv, dsXz, xlo, xhi, xtitle, xcolor = N.nitrate,     N.z, nitrate_lo, nitrate_hi, labelN, colorN
+    elif choice == labelP: dsXv, dsXz, xlo, xhi, xtitle, xcolor = P.par,         P.z, par_lo,     par_hi,     labelP, colorP
+    elif choice == labelH: dsXv, dsXz, xlo, xhi, xtitle, xcolor = H.ph,          H.z, ph_lo,      ph_hi,      labelH, colorH
+    elif choice == labelR: dsXv, dsXz, xlo, xhi, xtitle, xcolor = R.pco2,        R.z, pco2_lo,    pco2_hi,    labelR, colorR
     else: return 0
 
     # This configuration code block is hardcoded to work with March 2021
@@ -519,7 +518,7 @@ def BundleInteract(choice, time_index, bundle_size):
     x0, x1, y0, y1 = xlo, xhi, -200, 0
     title          = xtitle
     color          = xcolor
-    pIdcs          = GenerateTimeWindowIndices(pDf21, date0, date1, time0, time1)
+    pIdcs          = GenerateTimeWindowIndices(p, date0, date1, time0, time1)
     nProfiles      = len(pIdcs)
 
     # ad hoc locations on respective charts for text giving time range of current bundle
@@ -535,17 +534,17 @@ def BundleInteract(choice, time_index, bundle_size):
     for i in range(iProf0, iProf1):
         pIdx = pIdcs[i]
         if choice == labelH or choice == labelR:
-            ta0, ta1 = pDf21["descent_start"][pIdx], pDf21["descent_end"][pIdx]
+            ta0, ta1 = p["descent_start"][pIdx], p["descent_end"][pIdx]
         else:
-            ta0, ta1 = pDf21["ascent_start"][pIdx], pDf21["ascent_end"][pIdx]
+            ta0, ta1 = p["ascent_start"][pIdx], p["ascent_end"][pIdx]
         dsXsensor, dsXdepth = dsXv.sel(time=slice(ta0,  ta1)), dsXz.sel(time=slice(ta0, ta1))
         ax.plot(dsXsensor, dsXdepth, ms = 4., color=color, mfc=color)
     ax.set(title = title)
     ax.set(xlim = (x0, x1), ylim = (y0, y1))
 
     # Add text indicating the current time range of the profile bundle
-    tString = str(pDf21["ascent_start"][pIdcs[iProf0]])
-    if iProf1 - iProf0 > 1: tString += '\n ...through... \n' + str(pDf21["ascent_start"][pIdcs[iProf1-1]])
+    tString = str(p["ascent_start"][pIdcs[iProf0]])
+    if iProf1 - iProf0 > 1: tString += '\n ...through... \n' + str(p["ascent_start"][pIdcs[iProf1-1]])
     ax.text(px, py, tString)
     
     plt.show()
@@ -594,8 +593,8 @@ def Interactor(cu):
 
 def NitrateStaggerChart():
     '''Another visualization method: like fanning a deck of cards'''
-    pIdcsMidn = GenerateTimeWindowIndices(pDf21, dt64_from_doy(2021, 60), dt64_from_doy(2021, 91), midn0, midn1)   # 30
-    pIdcsNoon = GenerateTimeWindowIndices(pDf21, dt64_from_doy(2021, 60), dt64_from_doy(2021, 91), noon0, noon1)   # 31
+    pIdcsMidn = GenerateTimeWindowIndices(p, dt64_from_doy(2021, 60), dt64_from_doy(2021, 91), midn0, midn1)   # 30
+    pIdcsNoon = GenerateTimeWindowIndices(p, dt64_from_doy(2021, 60), dt64_from_doy(2021, 91), noon0, noon1)   # 31
     pIdcs = pIdcsMidn + pIdcsNoon
     pIdcs.sort()
     nProfiles = len(pIdcs)
@@ -608,8 +607,8 @@ def NitrateStaggerChart():
     nitrate_upper_bound = nitrate_lower_bound + (nProfiles - 1)*profile_shift + 250
     fig, ax = plt.subplots(figsize=(12,7), tight_layout=True)
     for i in range(len(pIdcs)):
-        ta0, ta1 = pDf21["ascent_start"][pIdcs[i]], pDf21["ascent_end"][pIdcs[i]]
-        Nx, Ny = dsN.nitrate.sel(time=slice(ta0,  ta1)), dsN.z.sel(time=slice(ta0, ta1))
+        ta0, ta1 = p["ascent_start"][pIdcs[i]], p["ascent_end"][pIdcs[i]]
+        Nx, Ny = N.nitrate.sel(time=slice(ta0,  ta1)), N.z.sel(time=slice(ta0, ta1))
         ax.plot(nitrate_stretch * Nx + i * profile_shift, Ny, ms = 4., color=colorwheel[i%cwmod] , mfc=colorwheel[i%cwmod])
     ax.set(xlim = (nitrate_lower_bound, nitrate_upper_bound), \
            ylim = (-200., 0.),                                \
@@ -625,38 +624,38 @@ def NitrateStaggerChart():
 ##################
 
 # Note these are profile times for Axial Base
-pDf21 = ReadProfileMetadata(os.getcwd()+"/Profiles/osb2021.csv")
+p = ReadProfileMetadata(os.getcwd()+"/Profiles/osb2021.csv")
 
 # Some code to test out the above ProfileEvaluation() function
 t0, t1 = dt64('2021-01-01'), dt64('2021-02-01')
 nDays = (t1 - t0).astype(int)
-nTotal, nMidn, nNoon = ProfileEvaluation(t0, t1, pDf21)
+nTotal, nMidn, nNoon = ProfileEvaluation(t0, t1, p)
 
 print("For 2021, month of January, we have...")
 print(nDays, 'days or', nDays*9, 'possible profiles')
 print("There were, over this time, in fact...")
 print(nTotal, 'profiles;', nMidn, 'at local midnight and', nNoon, 'at local noon')
 
-dsA, dsB, dsC, dsT, dsS, dsO, dsH, dsI, dsN, dsP, dsU, dsV, dsW, dsR = ReadOSB_March2021_1min()
+A, B, C, T, S, O, H, I, N, P, U, V, W, R = ReadOSB_March2021_1min()
 
 # Having loaded the data there are some artifacts to discard in O, T and :
-dsO = dsO.drop('moles_of_oxygen_per_unit_mass_in_sea_water_profiler_depth_enabled_qc_agg')
-dsT = dsT.drop('sea_water_temperature_profiler_depth_enabled_qc_agg')
-dsS = dsS.drop('sea_water_practical_salinity_profiler_depth_enabled_qc_agg')
+O = O.drop('moles_of_oxygen_per_unit_mass_in_sea_water_profiler_depth_enabled_qc_agg')
+T = T.drop('sea_water_temperature_profiler_depth_enabled_qc_agg')
+S = S.drop('sea_water_practical_salinity_profiler_depth_enabled_qc_agg')
 
 # ...and then apply the .dropna() to eliminate NaNs
 
-dsA = dsA.dropna('time')
-dsB = dsB.dropna('time')
-dsC = dsC.dropna('time')
-dsT = dsT.dropna('time')
-dsS = dsS.dropna('time')
-dsO = dsO.dropna('time')
-dsH = dsH.dropna('time')
-dsI = dsI.dropna('time')
-dsN = dsN.dropna('time')
-dsP = dsP.dropna('time')
-dsU = dsU.dropna('time')
-dsV = dsV.dropna('time')
-dsW = dsW.dropna('time')
-dsR = dsR.dropna('time')
+A = A.dropna('time')
+B = B.dropna('time')
+C = C.dropna('time')
+T = T.dropna('time')
+S = S.dropna('time')
+O = O.dropna('time')
+H = H.dropna('time')
+I = I.dropna('time')
+N = N.dropna('time')
+P = P.dropna('time')
+U = U.dropna('time')
+V = V.dropna('time')
+W = W.dropna('time')
+R = R.dropna('time')
