@@ -1,6 +1,16 @@
 ##################
 #
-# imports
+# imports, utility functions, perfunctory dataset loading
+#
+# IMPORTANT NOTE: There are two "data load" frameworks in operation here. The first is metadata on shallow
+#   profiler ascent/descent timing. The second is sensor time-series data. I will take a moment to 
+#   differentiate them here on a basic level. The former, profile metadata, is stored as a CSV of 
+#   profile timestamps for ascent, descent and rest phases, particular to the Oregon Slope Base site
+#   within the OOI Regional Cabled Array. These timestamps facilitate charting data against depth with 
+#   associated times indicated by text labels. The latter, sensor time series data, include temperature, 
+#   salinity, dissolved oxygen, CO2, PAR, pH, nitrate, and three fluorometer streams: Chlorophyll-A, 
+#   FDOM/CDOM and backscatter. Spectral irradiance is also included but is more complicated owing to
+#   an added dimension of wavelength range across seven channels. 
 #
 ##################
 
@@ -80,6 +90,7 @@ labelP = 'PAR'
 labelH = 'pH'
 labelR = 'pCO2'
 
+# respectively: oxygen, temp, salinity, chlor-a, backscatter, fdom/cdom, nitrate, PAR, pH, pCO2
 optionsList = [labelO, labelT, labelS, labelA, labelB, labelC, labelN, labelP, labelH, labelR]
 
 
@@ -236,27 +247,6 @@ def ProfileEvaluation(t0, t1, p):
     return nTotal, nMidn, nNoon
 
 
-
-
-def GetProfileDataFrameIndicesForSomeTime(site, year, target, window):
-    '''
-    This is a convenience function that bundles the profile metadata read with the scan for
-    profiles that match both a date window and a time-of-day window. The 'site' and 'year' 
-    arguments are strings. The target is a target datetime; so we want the shallow profiler
-    profile index that mostly closely matches it. 'window' is a +- window in minutes. This 
-    code has two major flaws at the moment.
-      - It will not work across day boundaries
-      - It returns a list of suitable indices; so these must be sorted out by inspection
-    '''
-    p             = ReadProfileMetadata(os.getcwd() + "/./Profiles/" + site + year + ".csv")        
-    t_date          = dt64(target.split('T')[0])                                        
-    t_time          = target.split('T')[1].split(':')                                
-    t_hrs, t_min    = int(t_time[0]), int(t_time[1])     
-    t_early, t_late = td64(t_hrs*60 + t_min - window, 'm'), td64(t_hrs*60 + t_min + window, 'm')    
-    return GenerateTimeWindowIndices(p, t_date, t_date, t_early, t_late), p
-
-
-
 def GetDiscreteSummaryCastSubset(dsDf, cast, columns):
     '''
     dsDf is a Discrete Summary Dataframe
@@ -350,6 +340,7 @@ def ReadOSB_March2021_1min():
         xr.open_dataset(data_source + 'current/osb_vnorth_march2021_1min.nc'),     \
         xr.open_dataset(data_source + 'current/osb_vup_march2021_1min.nc'),        \
         xr.open_dataset(data_source + 'pCO2/osb_pco2_march2021.nc')
+
 
 def ReadOSB_JuneJuly2018_1min():
     data_source = os.getcwd() + '/RepositoryData/rca/'
