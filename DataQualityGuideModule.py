@@ -80,6 +80,14 @@ def dt64_from_doy(year, doy): return dt64(str(year) + '-01-01') + td64(doy-1, 'D
 
 def day_of_month_to_string(d): return str(d) if d > 9 else '0' + str(d)
 
+def TimeOverlap(s0, s1, t0, t1):
+    '''
+    Do two time ranges overlap?
+    '''
+    if s0 > t0 and s0 < t1: return True
+    if s1 > t0 and s1 < t1: return True
+    if s0 < t0 and s1 > t1: return True
+    return False
 
 
 #################
