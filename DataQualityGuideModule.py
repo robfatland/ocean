@@ -12,6 +12,8 @@ this_dir = os.getcwd()
 from matplotlib import pyplot as plt
 from matplotlib import colors as mplcolors
 from matplotlib import animation, rc
+from matplotlib import dates as mdates
+
 import numpy as np, pandas as pd, xarray as xr
 from numpy import datetime64 as dt64, timedelta64 as td64
 
