@@ -140,18 +140,18 @@ def ShallowProfilerDepthOneDay(ds, t0str, t1str, title):
     axs.text(dt64('2021-03-01 00:17'), -135, 'S')
     axs.text(dt64('2021-03-01 00:22'), -120, 'C')
     axs.text(dt64('2021-03-01 00:27'), -105, 'E')
-    axs.text(dt64('2021-03-01 00:32'), -90, 'N')
-    axs.text(dt64('2021-03-01 00:37'), -75, 'D')
+    axs.text(dt64('2021-03-01 00:32'), -90,  'N')
+    axs.text(dt64('2021-03-01 00:37'), -75,  'D')
     axs.text(dt64('2021-03-01 00:42'), -60, ' I')
-    axs.text(dt64('2021-03-01 00:47'), -45, 'N')
-    axs.text(dt64('2021-03-01 00:52'), -30, 'G')
+    axs.text(dt64('2021-03-01 00:47'), -45,  'N')
+    axs.text(dt64('2021-03-01 00:52'), -30,  'G')
 
-    axs.text(dt64('2021-03-01 01:50'), -30, 'D')
-    axs.text(dt64('2021-03-01 01:52'), -43, 'E')
-    axs.text(dt64('2021-03-01 01:54'), -56, 'S')
-    axs.text(dt64('2021-03-01 01:56'), -69, 'C')
-    axs.text(dt64('2021-03-01 01:58'), -82, 'E')
-    axs.text(dt64('2021-03-01 02:00'), -95, 'N')
+    axs.text(dt64('2021-03-01 01:50'), -30,  'D')
+    axs.text(dt64('2021-03-01 01:52'), -43,  'E')
+    axs.text(dt64('2021-03-01 01:54'), -56,  'S')
+    axs.text(dt64('2021-03-01 01:56'), -69,  'C')
+    axs.text(dt64('2021-03-01 01:58'), -82,  'E')
+    axs.text(dt64('2021-03-01 02:00'), -95,  'N')
     axs.text(dt64('2021-03-01 02:02'), -108, 'D')
     axs.text(dt64('2021-03-01 02:04'), -121, 'I')
     axs.text(dt64('2021-03-01 02:06'), -134, 'N')
@@ -266,6 +266,18 @@ def ChartAB(p, xrng, pIdcs, A, Az, Albl, Acolor, B, Bz, Blbl, Bcolor, wid, hgt, 
     So A might be P.par (PAR DataArray) and depth Az would be P.z. Both use time as 
     their dimension. Charting is done over a set of passed profile indices pIdcs[].
     The number of profiles charted is constrained: Too many may bog down the kernel.
+    
+    p        pandas Dataframe of indexed profile timestamps
+    xrng
+    pIdcs    indices within p to use in generating a sequence of paired charts
+    A        xarray Dataset: source data of type A (B)
+    Az       xarray Dataset: depth data for sensor A (B)
+    Albl     string: label for sensor A (B)
+    Acolor   string: color for sensor A (B)
+    wid      width for two charts
+    hgt      height for one chart (scaled by number of charts)
+    z0, z1   range of depths, ascent start e.g. -200, end 0
+    legA     keyword 'ascent' or 'descent' or 'rest' to select portion of profile
     """
     global midn0, midn1, noon0, noon1
         
