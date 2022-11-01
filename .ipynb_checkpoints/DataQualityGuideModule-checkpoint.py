@@ -128,6 +128,14 @@ def ReadProfileMetadata(fnm):
 #######################
 # Given a time range we want the indices of the profiles within.
 #######################
+def ProfileListFromTimeWindow(p, t1, t2):
+    n = p.shape[0]
+    plist = []
+    for i in range(n):
+        if p['ascent_start'][i] >= t1 and p['ascent_start'][i] <= t2: plist.append(i)
+    return plist
+
+
 def GenerateTimeWindowIndices(p, date0, date1, time0, time1):
     '''
     Given two day boundaries and a time window (UTC) within a day: Return a list
@@ -253,6 +261,19 @@ def ChartAB(p, xrng, pIdcs, A, Az, Albl, Acolor, B, Bz, Blbl, Bcolor, wid, hgt, 
         axs[i].text(xlabel, -10., ascent_start_time)
         
     return fig, axs
+
+
+def CheckHITL(f, t1, t2):
+    annot, found_overlap, overlap_rows = pd.read_csv(f), False, []
+    for i in range(annot.shape[0]):
+        if TimeOverlap(t1, t2, dt64(annot['beginDate'][i]), dt64(annot['endDate'][i])):
+            found_overlap = True; overlap_rows.append(i)
+    if found_overlap: 
+        print('\n', len(overlap_rows), "time overlaps: annotations vs time range of interest. Rows:", overlap_rows)
+        for i in range(len(overlap_rows)):
+            print('      ', annot['beginDate'][overlap_rows[i]], ' to ', annot['endDate'][overlap_rows[i]])
+        print()
+    else: print("\nNo overlap between annotation record and time range of interest.\n")
 
 
 
