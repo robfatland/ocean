@@ -462,6 +462,9 @@ def SixSignalChartSequence(df, A, B, C, O, S, T, xrng, chart_indices = [506]):
 
 
 def BundleStatic(p, date0, date1, time0, time1, wid, hgt, color, x0, x1, y0, y1, dsXd, dsXz, title):
+    '''
+    Create bundle plots: Multiple profiles showing sensor/depth that tends to look like a bundle.
+    '''
     pIdcs = GenerateTimeWindowIndices(p, date0, date1, time0, time1)
     nProfiles = len(pIdcs)
     fig, ax = plt.subplots(figsize=(wid, hgt), tight_layout=True)
