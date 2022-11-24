@@ -1,5 +1,0 @@
-mv N.nc /mnt/c/Users/kilroy/NO3.nc
-mv O.nc /mnt/c/Users/kilroy/oxygen.nc
-mv R.nc /mnt/c/Users/kilroy/TCO2.nc
-mv S.nc /mnt/c/Users/kilroy/salinity.nc
-mv T.nc /mnt/c/Users/kilroy/temperature.nc
