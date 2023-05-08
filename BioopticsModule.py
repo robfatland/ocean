@@ -2,22 +2,24 @@
 #
 # imports, utility functions, perfunctory dataset loading
 #
-# IMPORTANT NOTE: There are two "data load" frameworks in operation here. The first is metadata on shallow
-#   profiler ascent/descent timing. The second is sensor time-series data. I will take a moment to 
-#   differentiate them here on a basic level. The former, profile metadata, is stored as a CSV of 
-#   profile timestamps for ascent, descent and rest phases, particular to the Oregon Slope Base site
-#   within the OOI Regional Cabled Array. These timestamps facilitate charting data against depth with 
-#   associated times indicated by text labels. The latter, sensor time series data, include temperature, 
-#   salinity, dissolved oxygen, CO2, PAR, pH, nitrate, and three fluorometer streams: Chlorophyll-A, 
-#   FDOM/CDOM and backscatter. Spectral irradiance is also included but is more complicated owing to
-#   an added dimension of wavelength range across seven channels. 
+# IMPORTANT NOTE: There are two "data frameworks" here. 
+#   1. metadata on shallow profiler cycling (timing)
+#   2. sensor time-series data. 
+#
+# Profiler metadata is a CSV file of timestamps for ascent/descent/rest phases, Oregon Slope Base
+#   site, OOI Regional Cabled Array (off the Oregon coast). This enables us to associate sensor data
+#   with depth.
+#
+# Sensor time series data includea temperature, salinity, dissolved oxygen, CO2, PAR, pH, nitrate, 
+#   fluorometer streams (Chlorophyll-A, FDOM/CDOM, backscatter), spectral irradiance, spectrophotometer
+#   measurements and current direction with depth. 
 #
 ##################
 
 import os, sys, time, glob, warnings
 from IPython.display import clear_output
 warnings.filterwarnings('ignore')
-this_dir = os.getcwd()  
+this_dir = os.getcwd()
 
 from matplotlib import pyplot as plt
 from matplotlib import colors as mplcolors
