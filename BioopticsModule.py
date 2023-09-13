@@ -646,7 +646,7 @@ print(nTotal, 'profiles;', nMidn, 'at local midnight and', nNoon, 'at local noon
 
 A, B, C, T, S, O, H, I, N, P, U, V, W, R = ReadOSB_March2021_1min()
 
-# Having loaded the data there are some artifacts to discard in O, T and :
+# Having loaded the data there are some artifacts to discard in O, T and S:
 O = O.drop('moles_of_oxygen_per_unit_mass_in_sea_water_profiler_depth_enabled_qc_agg')
 T = T.drop('sea_water_temperature_profiler_depth_enabled_qc_agg')
 S = S.drop('sea_water_practical_salinity_profiler_depth_enabled_qc_agg')
