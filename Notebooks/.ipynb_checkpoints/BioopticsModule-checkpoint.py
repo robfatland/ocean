@@ -2,22 +2,24 @@
 #
 # imports, utility functions, perfunctory dataset loading
 #
-# IMPORTANT NOTE: There are two "data load" frameworks in operation here. The first is metadata on shallow
-#   profiler ascent/descent timing. The second is sensor time-series data. I will take a moment to 
-#   differentiate them here on a basic level. The former, profile metadata, is stored as a CSV of 
-#   profile timestamps for ascent, descent and rest phases, particular to the Oregon Slope Base site
-#   within the OOI Regional Cabled Array. These timestamps facilitate charting data against depth with 
-#   associated times indicated by text labels. The latter, sensor time series data, include temperature, 
-#   salinity, dissolved oxygen, CO2, PAR, pH, nitrate, and three fluorometer streams: Chlorophyll-A, 
-#   FDOM/CDOM and backscatter. Spectral irradiance is also included but is more complicated owing to
-#   an added dimension of wavelength range across seven channels. 
+# IMPORTANT NOTE: There are two "data frameworks" here. 
+#   1. metadata on shallow profiler cycling (timing)
+#   2. sensor time-series data. 
+#
+# Profiler metadata is a CSV file of timestamps for ascent/descent/rest phases, Oregon Slope Base
+#   site, OOI Regional Cabled Array (off the Oregon coast). This enables us to associate sensor data
+#   with depth.
+#
+# Sensor time series data includea temperature, salinity, dissolved oxygen, CO2, PAR, pH, nitrate, 
+#   fluorometer streams (Chlorophyll-A, FDOM/CDOM, backscatter), spectral irradiance, spectrophotometer
+#   measurements and current direction with depth. 
 #
 ##################
 
 import os, sys, time, glob, warnings
 from IPython.display import clear_output
 warnings.filterwarnings('ignore')
-this_dir = os.getcwd()  
+this_dir = os.getcwd()
 
 from matplotlib import pyplot as plt
 from matplotlib import colors as mplcolors
@@ -644,7 +646,7 @@ print(nTotal, 'profiles;', nMidn, 'at local midnight and', nNoon, 'at local noon
 
 A, B, C, T, S, O, H, I, N, P, U, V, W, R = ReadOSB_March2021_1min()
 
-# Having loaded the data there are some artifacts to discard in O, T and :
+# Having loaded the data there are some artifacts to discard in O, T and S:
 O = O.drop('moles_of_oxygen_per_unit_mass_in_sea_water_profiler_depth_enabled_qc_agg')
 T = T.drop('sea_water_temperature_profiler_depth_enabled_qc_agg')
 S = S.drop('sea_water_practical_salinity_profiler_depth_enabled_qc_agg')
