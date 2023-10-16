@@ -102,5 +102,14 @@ def ReformatDataFile(verbose=False):
     t1 = dt64(t1)
     ds = ds.sel(time=slice(t0, t1))
 
+    print('\n\nHere is the resulting dataset summary view:\n')
     print(ds)
+    
+    # bug: this plot needs plt.show()-style compulsion; it holds back
+    # print("\n\ndepth quick look (assumes a 'z' coord/data variable:\n")
+    # ds.z[0:10000].plot()
+
+    outfnm = input('\n\nEnter an output file name. Include the .nc extension (or just enter to skip this): ')
+    if len(outfnm): ds.to_netcdf(outfnm)    
+
     return True
