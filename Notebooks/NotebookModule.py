@@ -126,7 +126,7 @@ def day_of_month_to_string(d): return str(d) if d > 9 else '0' + str(d)
 #################
 # Read in pre-processed profiler metadata for subsequent time-series subsetting.
 # Shallow profiler metadata are timestamps for Ascent / Descent / Rest. These are stored 
-#   as one-year-duration CSV files in the Profiles subfolder; are read into a Pandas 
+#   as one-year-duration CSV files in the profiles subfolder; are read into a Pandas 
 #   Dataframe. Columns correspond to ascent start time and so on, as noted in the code.
 #################
 
@@ -282,7 +282,7 @@ def CompareAscentDescent(p, T, S, O, A, B, C):
 ##################
 
 # profile metadata
-p = ReadProfileMetadata(os.getcwd()+"/../Profiles/osb2021.csv")
+p = ReadProfileMetadata(os.getcwd()+"/../profiles/osb2021.csv")
 
 # sensor data
 A, B, C, T, S, O, H, I, N, P, U, V, W, R = ReadOSB_March2021_1min()
